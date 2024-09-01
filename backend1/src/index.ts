@@ -15,6 +15,7 @@ const app = express();
 const NODE_ENV = process.env.NODE_ENV;
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === "production";
+const gameManager = new GameManger();
 
 if (!isProduction)
   app.use(
@@ -45,7 +46,37 @@ app.get("/", (req, res) => {
     });
   }
 
-  res.json({ message: "User ID set successfully", userId });
+  const gameId = gameManager.findGameIdWithPlayerId(userId);
+
+  res.json({
+    message: "User ID set successfully",
+    userId,
+    gameId,
+  });
+});
+
+app.get("/gamedata", (req, res) => {
+  const userId = req.cookies.userId;
+
+  if (userId) {
+    const gameInfo = gameManager.findGameWithPlayerId(userId);
+
+    if (gameInfo) {
+      const gameData = {
+        board: gameInfo.getChess.board(),
+        fen: gameInfo.getChess.fen(),
+      };
+
+      res.json({
+        message: "User ID set successfully",
+        userId,
+        gameData,
+        color: gameInfo.player1.playerUniqueKey === userId ? "white" : "black",
+      });
+    } else res.status(404).send("No game found");
+  } else {
+    res.status(404).send("No user Id");
+  }
 });
 
 // Endpoint to get the userId cookie data
@@ -63,21 +94,20 @@ app.get("/", (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const gameManager = new GameManger();
-
 // Handle WebSocket connections
 wss.on("connection", (ws, req) => {
   const cookies = req.headers.cookie;
   const userId = cookies?.split("=")[1];
 
   if (userId) {
+    gameManager.reconnect(userId, ws);
     gameManager.addUser(userId, ws);
 
-    ws.on("disconnect", () => gameManager.removeUser(ws));
+    ws.on("close", () => gameManager.removeUser(ws));
 
     // Handle user reconnection logic here (e.g., reassigning player roles)
   } else {
-    console.log("user ID found");
+    console.log("no userid found");
   }
 });
 
@@ -85,7 +115,3 @@ wss.on("connection", (ws, req) => {
 server.listen(PORT, () => {
   console.log(`${NODE_ENV} running on port ${PORT}`);
 });
-
-// Utility function to generate a unique ID
-
-wss.on("connection", function connection(ws) {});

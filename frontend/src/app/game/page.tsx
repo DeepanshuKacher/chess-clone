@@ -2,10 +2,10 @@
 
 import { ChessBoard } from "@/components/ChessBoard";
 import { useSocket } from "@/custom_hooks/useSocket";
-import { messages } from "@/utils/constants";
 import { sendJsonMessage } from "@/utils/functions";
-import axios, { AxiosError } from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+
+// const WS_URL = "ws://localhost:8080";
 
 function page() {
   const socket = useSocket();
@@ -15,33 +15,55 @@ function page() {
   // );
 
   const [whichSide, setWhichSide] = useState<string | null>(null);
+  const [whoseturn, setWhoseturn] = useState<string | null>(null);
+  // const [socket, setSocket] = useState<WebSocket | null>(null);
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:8080", {
-        withCredentials: true,
-      })
-      .then((response) => {
-        console.log(response.data);
-      })
-      .catch((error: AxiosError) => {
-        alert("Couldn't connect");
-        console.log(error);
-      });
+  // useEffect(() => {
+  //   axios
+  //     .get("http://localhost:8080", {
+  //       withCredentials: true,
+  //     })
+  //     .then((response) => {
+  //       console.log(response.data);
+  //       connectWebSocket();
+  //     })
+  //     .catch((error: AxiosError) => {
+  //       alert("Couldn't connect");
+  //       console.log(error);
+  //     });
 
-    return () => {
-      if (socket) socket.close();
-    };
-  }, [socket]);
+  //   return () => {
+  //     if (socket) socket.close();
+  //   };
+  // }, []);
 
   const InitializeGame = () => {
+    setWhichSide("initialize");
     socket?.send(sendJsonMessage("INIT_GAME"));
   };
+
+  // const connectWebSocket = () => {
+  //   const ws = new WebSocket(WS_URL);
+
+  //   ws.onopen = () => {
+  //     console.log("socket opened");
+  //     setSocket(ws);
+  //   };
+
+  //   ws.onclose = () => {
+  //     console.log("socket closed");
+  //     setSocket(null);
+  //   };
+  // };
 
   if (!socket) return <div>Connecting...</div>;
   return (
     <div className="border border-yellow-300 flex flex-col sm:flex-row items-center justify-around h-screen">
-      <ChessBoard socket={socket} setWhichSide={setWhichSide} />
+      <ChessBoard
+        setWhoseturn={setWhoseturn}
+        socket={socket}
+        setWhichSide={setWhichSide}
+      />
       <div className=" h-full flex flex-col justify-center space-y-7">
         {!whichSide ? (
           <h2>Initialized the game</h2>
@@ -55,6 +77,7 @@ function page() {
         >
           Start Match
         </button>
+        {whoseturn ? <h2>{whoseturn} turn</h2> : null}
       </div>
     </div>
   );

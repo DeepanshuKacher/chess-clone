@@ -1,7 +1,30 @@
+"use client";
+
+import axios, { type AxiosError } from "axios";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from "react";
 
 export default function Home() {
+  useEffect(() => {
+    axios
+      .get("http://localhost:8080", {
+        withCredentials: true,
+      })
+      .then((response) => {
+        console.log(response.data);
+        // connectWebSocket();
+      })
+      .catch((error: AxiosError) => {
+        alert("Couldn't connect");
+        console.log(error);
+      });
+
+    // return () => {
+    //   if (socket) socket.close();
+    // };
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="flex flex-col md:flex-row items-center space-y-8 md:space-y-0 md:space-x-8 p-8 bg-white shadow-lg rounded-lg">

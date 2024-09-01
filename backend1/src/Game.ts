@@ -4,7 +4,7 @@ import { messages } from "./messages";
 import { sendJsonReponse } from "./utils";
 
 export class Game {
-  private board: Chess;
+  private chess: Chess;
   // private moves: string[];
   private startTime: Date;
   private moveCount: number;
@@ -12,7 +12,7 @@ export class Game {
     public player1: { socket: WebSocket; playerUniqueKey: string },
     public player2: { socket: WebSocket; playerUniqueKey: string }
   ) {
-    this.board = new Chess();
+    this.chess = new Chess();
     // this.moves = [];
     this.startTime = new Date();
     this.moveCount = 0;
@@ -25,13 +25,17 @@ export class Game {
     // validate type of move using zod
 
     if (this.moveCount % 2 === 0 && socket !== this.player1.socket) {
-      return socket.send(sendJsonReponse(messages.ERROR, "Invalid move"));
+      return socket.send(
+        sendJsonReponse(messages.ERROR, "This is white player move")
+      );
     }
     if (this.moveCount % 2 === 1 && socket !== this.player2.socket) {
-      return socket.send(sendJsonReponse(messages.ERROR, "Invalid move"));
+      return socket.send(
+        sendJsonReponse(messages.ERROR, "This is black player move")
+      );
     }
     try {
-      this.board.move({
+      this.chess.move({
         from: move.from,
         to: move.to,
       });
@@ -44,15 +48,19 @@ export class Game {
       //   this.player2.send(gameOverMessage);
       //   return;
       // }
-      this.player2.socket.send(sendJsonReponse(messages.MOVE, move));
-      this.player1.socket.send(sendJsonReponse(messages.MOVE, move));
+      this.player2.socket.send(
+        sendJsonReponse(messages.MOVE, this.chess.fen())
+      );
+      this.player1.socket.send(
+        sendJsonReponse(messages.MOVE, this.chess.fen())
+      );
       this.moveCount++;
     } catch (error) {
       socket.send(sendJsonReponse(messages.ERROR, "Invalid Move"));
     }
   }
 
-  get getBoard() {
-    return this.board;
+  get getChess() {
+    return this.chess;
   }
 }

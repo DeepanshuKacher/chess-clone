@@ -1,5 +1,6 @@
 import { message_enum, messages } from "@/utils/constants";
 import { sendJsonMessage } from "@/utils/functions";
+import axios, { Axios, AxiosError } from "axios";
 import { Chess, type Color, type PieceSymbol, type Square } from "chess.js";
 import { useEffect, useState } from "react";
 
@@ -12,6 +13,37 @@ interface Props {
   // handleMove: (location: Square) => void;
   socket: WebSocket;
   setWhichSide: React.Dispatch<React.SetStateAction<string | null>>;
+  setWhoseturn: React.Dispatch<React.SetStateAction<string | null>>;
+}
+
+interface ResSquare {
+  square: string; // e.g., "a8"
+  type: "p" | "r" | "n" | "b" | "q" | "k"; // pawn, rook, knight, bishop, queen, king
+  color: "w" | "b"; // white or black
+}
+
+// Define a type for the game board
+interface BoardRow {
+  [index: number]: ResSquare | null;
+}
+
+// Define the type for the entire board
+interface Board {
+  [rowIndex: number]: BoardRow;
+}
+
+// Define the type for the game data
+interface GameData {
+  board: Board;
+  fen: string; // Forsyth-Edwards Notation for the game state
+}
+
+// Define the type for the response message
+interface ResponseMessage {
+  message: string; // e.g., "User ID set successfully"
+  userId: string; // e.g., "5e63171b-674b-466e-816c-79f2a615b9d7"
+  gameData: GameData;
+  color: "white" | "black"; // Player color
 }
 
 const reuseTailwindClass = {
@@ -46,19 +78,37 @@ const getPieceUnicode = (piece: {
 };
 
 export const ChessBoard = (props: Props) => {
-  const { socket, setWhichSide } = props;
+  const { socket, setWhichSide, setWhoseturn } = props;
 
-  const [chess, setChess] = useState<Chess | null>(null);
-  const [board, setBoard] = useState<
-    | ({
-        square: Square;
-        type: PieceSymbol;
-        color: Color;
-      } | null)[][]
-    | null
-  >(null);
+  const [chess, setChess] = useState<Chess>(new Chess());
+  const [board, setBoard] = useState(chess.board());
   const [from, setFrom] = useState<Square | null>(null);
   const [moveLoading, setMoveLoading] = useState(false);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:8080/gamedata", {
+        withCredentials: true,
+      })
+      .then((response) => {
+        const data: ResponseMessage = response.data;
+
+        const newChess = new Chess(data.gameData.fen);
+
+        setChess(newChess);
+
+        setBoard(newChess.board());
+        setWhoseturn(newChess.turn());
+
+        setWhichSide(data.color);
+      })
+      .catch((error: AxiosError) => {
+        console.log(error.response?.data);
+        // console.log(error.message);
+        // console.log(error.cause);
+        // console.log(error.response?.data);
+      });
+  }, []);
 
   useEffect(() => {
     if (socket)
@@ -73,6 +123,7 @@ export const ChessBoard = (props: Props) => {
             const chessInit = new Chess();
             setChess(chessInit);
             setBoard(chessInit.board());
+            setWhoseturn(chessInit.turn());
 
             setWhichSide(message.payload.color);
             console.log("Game initialized");
@@ -80,9 +131,15 @@ export const ChessBoard = (props: Props) => {
 
           case messages.MOVE:
             const move = message.payload;
-            // console.log(move);
-            chess?.move(move);
-            if (chess) setBoard(chess?.board());
+
+            const newChess = new Chess(move);
+
+            setChess(newChess);
+
+            setBoard(newChess.board());
+
+            setWhoseturn(newChess.turn());
+
             setMoveLoading(false);
             break;
 
@@ -94,21 +151,6 @@ export const ChessBoard = (props: Props) => {
           case messages.GAME_OVER:
             console.log("Game over");
             break;
-
-          case messages.RECONNECT:
-            const data: {
-              board: ({
-                square: Square;
-                type: PieceSymbol;
-                color: Color;
-              } | null)[][];
-              color: string;
-              fen: string;
-            } = message.payload;
-            const chessReconnect = new Chess(data.fen);
-            setChess(chessReconnect);
-            setBoard(chessReconnect.board());
-            setWhichSide(data.color);
 
           default:
             console.log(message);
@@ -155,7 +197,7 @@ export const ChessBoard = (props: Props) => {
           >
             {cell && (
               <span
-                className={`text-5xl ${
+                className={`text-5xl cursor-pointer ${
                   cell.color === "w"
                     ? reuseTailwindClass.textWhite
                     : reuseTailwindClass.textBlack

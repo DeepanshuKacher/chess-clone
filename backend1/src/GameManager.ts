@@ -26,44 +26,35 @@ export class GameManger {
   removeUser(socket: WebSocket) {
     // this.users = this.users.filter((user) => user !== socket);
     //stop the game here because user left
+
+    // console.log("user is fucked-off");
   }
 
-  private addHandler(uniquePlayerKey: string, socket: WebSocket) {
-    const gameUniqueKey = this.playerToGame[uniquePlayerKey];
+  reconnect(userId: string, ws: WebSocket) {
+    const gameUniqueKey = this.playerToGame[userId];
 
     if (gameUniqueKey) {
-      console.log("user reconnected");
       const game = this.games[gameUniqueKey];
 
       if (game) {
-        const gameState = game.getBoard;
-        if (game.player1.playerUniqueKey === uniquePlayerKey) {
-          game.player1.socket = socket;
-
-          sendSocketMessage(socket, "RECONNECT", {
-            board: gameState.board(),
-            color: "white",
-            fen: gameState.fen(),
-          });
-        } else if (game.player2.playerUniqueKey === uniquePlayerKey) {
-          game.player2.socket = socket;
-
-          sendSocketMessage(socket, "RECONNECT", {
-            board: gameState.board(),
-            color: "black",
-            fen: gameState.fen(),
-          });
+        // console.log("this is reconnect");
+        if (game.player1.playerUniqueKey === userId) {
+          game.player1.socket = ws;
+        } else if (game.player2.playerUniqueKey === userId) {
+          game.player2.socket = ws;
         }
-      } else {
-        delete this.games[gameUniqueKey];
-        delete this.playerToGame[uniquePlayerKey];
       }
     }
+  }
 
+  private addHandler(uniquePlayerKey: string, socket: WebSocket) {
     socket.on("message", (message) => {
       const data = getData(message);
 
+      // console.log("get message");
+
       if (data?.type === messages.INIT_GAME) {
+        // console.log("init game");
         if (this.pendingUser) {
           const game = new Game(
             {
@@ -104,10 +95,36 @@ export class GameManger {
         const movePayload = moveData(data?.payload);
 
         if (!movePayload)
-          return sendSocketMessage(socket, "ERROR", "Invalid Move");
+          return sendSocketMessage(socket, "ERROR", "No Move Payload");
 
         game.makeMove(socket, movePayload.move);
       }
     });
+  }
+
+  findGameIdWithPlayerId(uniquePlayerKey: string) {
+    const gameUniqueKey = this.playerToGame[uniquePlayerKey];
+    if (gameUniqueKey) {
+      const game = this.games[gameUniqueKey];
+
+      if (game) {
+        return gameUniqueKey;
+      } else {
+        return null;
+      }
+    }
+  }
+
+  findGameWithPlayerId(uniquePlayerKey: string) {
+    const gameUniqueKey = this.playerToGame[uniquePlayerKey];
+    if (gameUniqueKey) {
+      const game = this.games[gameUniqueKey];
+
+      if (game) {
+        return game;
+      } else {
+        return null;
+      }
+    }
   }
 }
