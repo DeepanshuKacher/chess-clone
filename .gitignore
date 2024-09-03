@@ -1,5 +1,7 @@
 /frontend/.next
+/frontend/out
 /frontend/node_modules/
 
 /backend1/dist
+/backend1/out
 /backend1/node_modules
