@@ -1,16 +1,10 @@
 import { message_enum, messages } from "@/utils/constants";
 import { sendJsonMessage } from "@/utils/functions";
-import axios, { Axios, AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 import { Chess, type Color, type PieceSymbol, type Square } from "chess.js";
 import { useEffect, useState } from "react";
 
 interface Props {
-  // board: ({
-  //   square: Square;
-  //   type: PieceSymbol;
-  //   color: Color;
-  // } | null)[][];
-  // handleMove: (location: Square) => void;
   socket: WebSocket;
   setWhichSide: React.Dispatch<React.SetStateAction<string | null>>;
   setWhoseturn: React.Dispatch<React.SetStateAction<string | null>>;
@@ -51,6 +45,7 @@ const reuseTailwindClass = {
   darkGreen: "bg-green-800",
   textWhite: "text-white",
   textBlack: "text-black",
+  lightYellow: "bg-yellow-300",
 };
 
 const boardLetter = ["a", "b", "c", "d", "e", "f", "g", "h"];
@@ -116,7 +111,6 @@ export const ChessBoard = (props: Props) => {
         const message: { type: message_enum; payload: any } = JSON.parse(
           event.data
         );
-        console.log(message);
 
         switch (message.type) {
           case messages.INIT_GAME:
@@ -126,7 +120,6 @@ export const ChessBoard = (props: Props) => {
             setWhoseturn(chessInit.turn());
 
             setWhichSide(message.payload.color);
-            console.log("Game initialized");
             break;
 
           case messages.MOVE:
@@ -147,9 +140,10 @@ export const ChessBoard = (props: Props) => {
             // console.log(message.payload);
             alert(message.payload);
             setMoveLoading(false);
+            break;
 
           case messages.GAME_OVER:
-            console.log("Game over");
+            alert(message.payload);
             break;
 
           default:
@@ -175,6 +169,10 @@ export const ChessBoard = (props: Props) => {
     }
   };
 
+  const onSquareClick = (colIndex: number, rowIndex: number) => {
+    handleMove((boardLetter[colIndex] + (8 - rowIndex)) as Square);
+  };
+
   return (
     <div className="grid relative grid-cols-8 w-[32rem] border border-black">
       {moveLoading ? (
@@ -183,32 +181,36 @@ export const ChessBoard = (props: Props) => {
         </div>
       ) : null}
       {board?.map((row, rowIndex) =>
-        row.map((cell, colIndex) => (
-          <div
-            key={`${rowIndex}-${colIndex}`}
-            onClick={() =>
-              handleMove((boardLetter[colIndex] + (8 - rowIndex)) as Square)
-            }
-            className={`flex items-center justify-center h-16 w-16  ${
-              (rowIndex + colIndex) % 2 === 0
-                ? reuseTailwindClass.lightGreen
-                : reuseTailwindClass.darkGreen
-            }`}
-          >
-            {cell && (
-              <span
-                className={`text-5xl cursor-pointer ${
-                  cell.color === "w"
-                    ? reuseTailwindClass.textWhite
-                    : reuseTailwindClass.textBlack
-                }`}
-              >
-                {getPieceUnicode(cell)}
-                {/* {boardLetter[colIndex] + (8 - rowIndex)} */}
-              </span>
-            )}
-          </div>
-        ))
+        row.map((cell, colIndex) => {
+          return (
+            <div
+              key={`${rowIndex}-${colIndex}`}
+              onClick={() => {
+                onSquareClick(colIndex, rowIndex);
+              }}
+              className={`flex items-center justify-center h-16 w-16 ${
+                cell?.square === from
+                  ? reuseTailwindClass.lightYellow
+                  : (rowIndex + colIndex) % 2 === 0
+                  ? reuseTailwindClass.lightGreen
+                  : reuseTailwindClass.darkGreen
+              }`}
+            >
+              {cell && (
+                <span
+                  className={`text-5xl cursor-pointer ${
+                    cell.color === "w"
+                      ? reuseTailwindClass.textWhite
+                      : reuseTailwindClass.textBlack
+                  }`}
+                >
+                  {getPieceUnicode(cell)}
+                  {/* {boardLetter[colIndex] + (8 - rowIndex)} */}
+                </span>
+              )}
+            </div>
+          );
+        })
       )}
     </div>
   );

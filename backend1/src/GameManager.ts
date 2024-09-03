@@ -8,7 +8,7 @@ import { sendSocketMessage } from "./utils";
 export class GameManger {
   private pendingUser: { websocket: WebSocket; uniqueKey: string } | null;
   // private users: { [uniqueKey: string]: WebSocket };
-  private games: { [uniqueKey: string]: Game | null };
+  private games: { [uniqueKey: string]: Game | null }; // development_comment make this private
   private playerToGame: { [playerUniqueKey: string]: string | null };
 
   constructor() {
@@ -23,11 +23,48 @@ export class GameManger {
     this.addHandler(playerUniqueKey, socket);
   }
 
-  removeUser(socket: WebSocket) {
-    // this.users = this.users.filter((user) => user !== socket);
-    //stop the game here because user left
+  playerdisconnected(userId: string) {
+    const gameUniqueKey = this.playerToGame[userId];
 
-    // console.log("user is fucked-off");
+    // if both player has disconnected then
+
+    if (gameUniqueKey) {
+      const game = this.games[gameUniqueKey];
+
+      if (game) {
+        // Wait for 10 seconds before declaring the winner
+
+        const winnerSocket =
+          game.player1.playerUniqueKey === userId
+            ? game.player2.socket
+            : game.player1.socket;
+
+        const disconnectedPlayer =
+          game.player1.playerUniqueKey === userId ? 1 : 2;
+
+        setTimeout(() => {
+          const playerDetail =
+            disconnectedPlayer === 1 ? game.player1 : game.player2;
+
+          if (playerDetail.socket.readyState === WebSocket.CLOSED) {
+            // console.log(first)
+
+            // Check if the game is still ongoing
+
+            delete this.games[gameUniqueKey];
+
+            if (winnerSocket.readyState === WebSocket.OPEN) {
+              // Declare the remaining player as the winner
+
+              if (game.gameOver === false)
+                game.endGame(`The opponent has left. You win!`);
+
+              // also clear game data
+            }
+          }
+        }, 10000); // 10-second delay
+      }
+    }
   }
 
   reconnect(userId: string, ws: WebSocket) {
@@ -126,5 +163,9 @@ export class GameManger {
         return null;
       }
     }
+  }
+
+  get getGameObject() {
+    return this.games;
   }
 }

@@ -6,15 +6,14 @@ import { sendJsonReponse } from "./utils";
 export class Game {
   private chess: Chess;
   // private moves: string[];
-  private startTime: Date;
   private moveCount: number;
+  public gameOver: boolean = false;
   constructor(
     public player1: { socket: WebSocket; playerUniqueKey: string },
     public player2: { socket: WebSocket; playerUniqueKey: string }
   ) {
     this.chess = new Chess();
     // this.moves = [];
-    this.startTime = new Date();
     this.moveCount = 0;
 
     player1.socket.send(sendJsonReponse("INIT_GAME", { color: "white" }));
@@ -22,7 +21,14 @@ export class Game {
   }
 
   makeMove(socket: WebSocket, move: { from: string; to: string }) {
-    // validate type of move using zod
+    if (this.gameOver) {
+      return socket.send(
+        sendJsonReponse(
+          messages.ERROR,
+          "The game is over, no more moves allowed."
+        )
+      );
+    }
 
     if (this.moveCount % 2 === 0 && socket !== this.player1.socket) {
       return socket.send(
@@ -38,16 +44,9 @@ export class Game {
       this.chess.move({
         from: move.from,
         to: move.to,
+        promotion: "q", // Pawn can be promoted to queen in chess.js
       });
 
-      // if (this.board.isGameOver()) {
-      //   const gameOverMessage = this.formatMessageTypeAndPayload("GAME_OVER", {
-      //     winner: this.board.isCheckmate() ? this.board.turn() : null,
-      //   });
-      //   this.player1.send(gameOverMessage);
-      //   this.player2.send(gameOverMessage);
-      //   return;
-      // }
       this.player2.socket.send(
         sendJsonReponse(messages.MOVE, this.chess.fen())
       );
@@ -55,12 +54,40 @@ export class Game {
         sendJsonReponse(messages.MOVE, this.chess.fen())
       );
       this.moveCount++;
+
+      // Check for game-over conditions
+      if (this.chess.isCheckmate()) {
+        this.gameOver = true;
+        const winner = socket === this.player1.socket ? "White" : "Black";
+        this.endGame(`Checkmate! ${winner} wins.`);
+      } else if (this.chess.isStalemate()) {
+        this.gameOver = true;
+        this.endGame("Stalemate! Game over");
+      } else if (this.chess.isDraw()) {
+        this.gameOver = true;
+        this.endGame("Draw! Game over");
+      } else if (this.chess.isThreefoldRepetition()) {
+        this.gameOver = true;
+        this.endGame("Threefold repetition! Game over");
+      } else if (this.chess.isInsufficientMaterial()) {
+        this.gameOver = true;
+        this.endGame("Insufficient material! Game over");
+      }
     } catch (error) {
-      socket.send(sendJsonReponse(messages.ERROR, "Invalid Move"));
+      if (this.chess.inCheck()) {
+        socket.send(sendJsonReponse(messages.ERROR, "In Check"));
+      } else {
+        socket.send(sendJsonReponse(messages.ERROR, "Invalid Move"));
+      }
     }
   }
 
   get getChess() {
     return this.chess;
+  }
+
+  public endGame(message: string) {
+    this.player1.socket.send(sendJsonReponse(messages.GAME_OVER, message));
+    this.player2.socket.send(sendJsonReponse(messages.GAME_OVER, message));
   }
 }

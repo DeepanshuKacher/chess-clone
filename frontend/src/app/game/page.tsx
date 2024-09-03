@@ -77,7 +77,9 @@ function page() {
         >
           Start Match
         </button>
-        {whoseturn ? <h2>{whoseturn} turn</h2> : null}
+        {whoseturn ? (
+          <h2>{whoseturn === "b" ? "Black" : "White"} turn</h2>
+        ) : null}
       </div>
     </div>
   );

@@ -32,6 +32,10 @@ app.use(cookieParser());
 
 // Example route to initialize a session
 
+app.get("/getGameObject", (req, res) => {
+  res.json(gameManager.getGameObject);
+});
+
 app.get("/", (req, res) => {
   let userId = req.cookies.userId;
 
@@ -103,9 +107,7 @@ wss.on("connection", (ws, req) => {
     gameManager.reconnect(userId, ws);
     gameManager.addUser(userId, ws);
 
-    ws.on("close", () => gameManager.removeUser(ws));
-
-    // Handle user reconnection logic here (e.g., reassigning player roles)
+    ws.on("close", () => gameManager.playerdisconnected(userId));
   } else {
     console.log("no userid found");
   }
