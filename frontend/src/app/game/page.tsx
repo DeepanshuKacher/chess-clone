@@ -5,56 +5,16 @@ import { useSocket } from "@/custom_hooks/useSocket";
 import { sendJsonMessage } from "@/utils/functions";
 import React, { useState } from "react";
 
-// const WS_URL = "ws://localhost:8080";
-
-function page() {
+const GamePage = () => {
   const socket = useSocket();
-
-  // const [gameStatus, setGameStatus] = useState<keyof typeof messages | null>(
-  //   null
-  // );
 
   const [whichSide, setWhichSide] = useState<string | null>(null);
   const [whoseturn, setWhoseturn] = useState<string | null>(null);
-  // const [socket, setSocket] = useState<WebSocket | null>(null);
-
-  // useEffect(() => {
-  //   axios
-  //     .get("http://localhost:8080", {
-  //       withCredentials: true,
-  //     })
-  //     .then((response) => {
-  //       console.log(response.data);
-  //       connectWebSocket();
-  //     })
-  //     .catch((error: AxiosError) => {
-  //       alert("Couldn't connect");
-  //       console.log(error);
-  //     });
-
-  //   return () => {
-  //     if (socket) socket.close();
-  //   };
-  // }, []);
 
   const InitializeGame = () => {
     setWhichSide("initialize");
     socket?.send(sendJsonMessage("INIT_GAME"));
   };
-
-  // const connectWebSocket = () => {
-  //   const ws = new WebSocket(WS_URL);
-
-  //   ws.onopen = () => {
-  //     console.log("socket opened");
-  //     setSocket(ws);
-  //   };
-
-  //   ws.onclose = () => {
-  //     console.log("socket closed");
-  //     setSocket(null);
-  //   };
-  // };
 
   if (!socket) return <div>Connecting...</div>;
   return (
@@ -83,6 +43,6 @@ function page() {
       </div>
     </div>
   );
-}
+};
 
-export default page;
+export default GamePage;

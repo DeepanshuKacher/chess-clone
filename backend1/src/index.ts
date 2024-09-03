@@ -3,6 +3,7 @@ import http from "http";
 import { WebSocketServer } from "ws";
 import { randomUUID } from "node:crypto";
 import cookieParser from "cookie-parser";
+import path from "path";
 import { GameManger } from "./GameManager";
 import cors from "cors";
 
@@ -25,6 +26,11 @@ if (!isProduction)
     })
   );
 
+if (isProduction) {
+  // const outDir = path.join(__dirname, "out");
+  app.use(express.static("out"));
+}
+
 app.use(express.json());
 // Configure cookie-session middleware
 
@@ -45,7 +51,7 @@ app.get("/", (req, res) => {
     res.cookie("userId", userId, {
       maxAge: 24 * 60 * 60 * 1000 * 24, // 24 days
       httpOnly: true, // Ensures the cookie is only accessible through HTTP(S), not by client-side scripts
-      secure: isProduction, // Only send over HTTPS in production
+      // secure: isProduction, // Only send over HTTPS in production
       sameSite: isProduction ? "strict" : "lax", // Adjust SameSite for cross-origin in development
     });
   }

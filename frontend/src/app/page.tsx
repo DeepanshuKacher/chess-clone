@@ -44,7 +44,7 @@ export default function Home() {
           <h2 className="text-3xl font-bold mb-4">Play Chess Online</h2>
           <p className="text-gray-700 mb-6">
             Join our online chess community and compete with players from around
-            the world. Whether you're a beginner or a grandmaster, there's
+            the world. Whether you&apos;re a beginner or a grandmaster, there&apos;s
             always a challenge waiting for you.
           </p>
           <Link
