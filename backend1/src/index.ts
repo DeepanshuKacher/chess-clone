@@ -3,7 +3,6 @@ import http from "http";
 import { WebSocketServer } from "ws";
 import { randomUUID } from "node:crypto";
 import cookieParser from "cookie-parser";
-import path from "path";
 import { GameManger } from "./GameManager";
 import cors from "cors";
 

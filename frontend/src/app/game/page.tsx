@@ -16,7 +16,7 @@ const GamePage = () => {
     socket?.send(sendJsonMessage("INIT_GAME"));
   };
 
-  if (!socket) return <div>Connecting...</div>;
+  if (!socket) return <div>Please Reload browser</div>;
   return (
     <div className="border border-yellow-300 flex flex-col sm:flex-row items-center justify-around h-screen">
       <ChessBoard
