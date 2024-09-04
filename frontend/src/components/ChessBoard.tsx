@@ -1,4 +1,4 @@
-import { message_enum, messages } from "@/utils/constants";
+import { baseUrl, message_enum, messages } from "@/utils/constants";
 import { sendJsonMessage } from "@/utils/functions";
 import axios, { AxiosError } from "axios";
 import { Chess, type Color, type PieceSymbol, type Square } from "chess.js";
@@ -82,7 +82,7 @@ export const ChessBoard = (props: Props) => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/gamedata", {
+      .get(baseUrl+"gamedata", {
         withCredentials: true,
       })
       .then((response) => {

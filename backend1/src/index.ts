@@ -16,26 +16,42 @@ const app = express();
 const NODE_ENV = process.env.NODE_ENV;
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === "production";
+const developmentUrl = process.env.DEVELOPMENT_URL;
+const productionUrl = process.env.PRODUCTION_URL;
 const gameManager = new GameManger();
 
-if (!isProduction)
+// if (!isProduction)
+
+if (isProduction) {
   app.use(
     cors({
-      origin: "http://localhost:3000", // Your frontend's address
+      origin: productionUrl, // Your frontend's address
       credentials: true, // Allow cookies to be sent with requests
     })
   );
-
-if (isProduction) {
-  // const outDir = path.join(__dirname, "out");
-  app.use(express.static("out"));
+} else {
+  app.use(
+    cors({
+      origin: developmentUrl, // Your frontend's address
+      credentials: true, // Allow cookies to be sent with requests
+    })
+  );
 }
+
+// if (isProduction) {
+//   // const outDir = path.join(__dirname, "out");
+//   app.use(express.static("out"));
+// }
 
 app.use(express.json());
 // Configure cookie-session middleware
 
 app.use(cookieParser());
 
+app.use((req, res, next) => {
+  // console.log(req.cookies);
+  next();
+});
 // Example route to initialize a session
 
 app.get("/getGameObject", (req, res) => {
@@ -45,13 +61,15 @@ app.get("/getGameObject", (req, res) => {
 app.get("/", (req, res) => {
   let userId = req.cookies.userId;
 
+  // console.log("hitting");
+
   if (!userId) {
     userId = randomUUID(); // Generate a new userId
 
     res.cookie("userId", userId, {
       maxAge: 24 * 60 * 60 * 1000 * 24, // 24 days
       httpOnly: true, // Ensures the cookie is only accessible through HTTP(S), not by client-side scripts
-      // secure: isProduction, // Only send over HTTPS in production
+      secure: isProduction, // Only send over HTTPS in production
       sameSite: isProduction ? "strict" : "lax", // Adjust SameSite for cross-origin in development
     });
   }

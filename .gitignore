@@ -1,5 +1,6 @@
 /frontend/.next
 /frontend/out
+/frontend/.env
 /frontend/node_modules/
 
 /backend1/dist
