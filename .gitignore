@@ -1,9 +1,9 @@
 /frontend/.next
 /frontend/out
-/frontend/.env
+# /frontend/.env
 /frontend/node_modules/
 
 /backend1/dist
 /backend1/out
-/backend1/.env
+# /backend1/.env
 /backend1/node_modules
